@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKDSE 數學科：化簡代數分式 隨機練習生成器</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX CSS & JS for textbook-grade math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <!-- Google Fonts: Noto Sans TC & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', '"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        paper: '#FAF9F6',
+                        indigoBrand: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            600: '#4F46E5',
+                            700: '#4338CA',
+                            800: '#3730A3',
+                            900: '#1E1B4B',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F4F3EF;
+            color: #1E293B;
+        }
+
+        /* KaTeX custom sizing for crisp fractions */
+        .katex {
+            font-size: 1.25em;
+        }
+        .step-katex .katex {
+            font-size: 1.08em;
+        }
+
+        /* Custom subtle grid background for student working area */
+        .work-area-grid {
+            background-image: radial-gradient(#CBD5E1 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+
+        /* Smooth transitions */
+        .fade-in {
+            animation: fadeIn 0.28s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Print Styles: Clean A4 School Worksheet Layout */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm 14mm;
+            }
+            body {
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 10.5pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-container {
+                max-width: 100% !important;
+                width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #FFFFFF !important;
+            }
+            .q-card-box {
+                border: 1.5px solid #0F172A !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+                margin-bottom: 14px !important;
+            }
+            .q-card-header {
+                background-color: #F8FAFC !important;
+                border-bottom: 1.5px solid #0F172A !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .sub-q-cell {
+                border-color: #64748B !important;
+            }
+            .work-area-grid {
+                background-image: none !important;
+                min-height: 26mm !important;
+            }
+            .katex {
+                font-size: 1.15em !important;
+            }
+            .solution-box {
+                background-color: #F8FAFC !important;
+                border: 1px solid #94A3B8 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-footer {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Top Navigation & Control Toolbar (Hidden when printing) -->
+    <header class="no-print sticky top-0 z-30 bg-indigoBrand-900 text-white shadow-md border-b border-indigoBrand-800">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <!-- Brand & Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigoBrand-600 flex items-center justify-center shadow-inner border border-indigo-400/30 shrink-0">
+                    <span class="font-serif italic font-bold text-xl text-white">x/y</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-base sm:text-lg font-bold tracking-wide">化簡代數分式 隨機練習生成器</h1>
+                        <span class="hidden sm:inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-800 text-indigo-200 border border-indigo-600">HKDSE 基礎代數</span>
+                    </div>
+                    <p class="text-xs text-indigo-200">完全參照標準工作紙題型 • 支援無限隨機出題、詳細題解與 A4 列印</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="btnGenerate" type="button" onclick="generateNewWorksheet()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition cursor-pointer">
+                    <span>🎲</span>
+                    <span>隨機生成新練習</span>
+                </button>
+
+                <button id="btnToggleSolutions" type="button" onclick="toggleAllSolutions()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigoBrand-700 hover:bg-indigoBrand-600 text-white font-medium text-sm border border-indigo-500/50 shadow-sm transition cursor-pointer">
+                    <span id="eyeIcon">👁️</span>
+                    <span id="toggleSolText">顯示詳細題解</span>
+                </button>
+
+                <button id="btnToggleSelfTest" type="button" onclick="toggleSelfTestMode()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium text-sm border border-slate-600 shadow-sm transition cursor-pointer">
+                    <span>📝</span>
+                    <span id="selfTestText">開啟互動自測</span>
+                </button>
+
+                <button type="button" onclick="window.print()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-slate-100 text-indigoBrand-900 font-semibold text-sm shadow-sm transition cursor-pointer">
+                    <span>🖨️</span>
+                    <span>列印 / 儲存 PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Secondary Status / Mode Bar -->
+        <div class="bg-indigoBrand-950/60 border-t border-indigoBrand-800/80 px-4 sm:px-6 py-1.5 text-xs text-indigo-200">
+            <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-4">
+                    <span>練習編號：<strong id="seedBadge" class="font-mono text-amber-300">#DSE-0000</strong></span>
+                    <span id="modeIndicator" class="inline-flex items-center gap-1 text-emerald-300">
+                        ● 目前模式：學生練習卷（隱藏答案，適合列印測驗）
+                    </span>
+                </div>
+                <div class="hidden md:block text-indigo-300">
+                    提示：列印前可切換「顯示 / 隱藏詳細題解」以分別列印<strong>學生版</strong>或<strong>教師答案版</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="no-print fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2 text-sm font-medium">
+            <span class="text-emerald-400">✓</span>
+            <span id="toastMsg">已生成全新 8 道代數分式練習題！</span>
+        </div>
+    </div>
+
+    <!-- Main Worksheet Paper Container -->
+    <main class="flex-1 py-6 px-3 sm:px-6">
+        <div class="print-container max-w-4xl mx-auto bg-paper rounded-2xl shadow-lg border border-slate-200/90 p-5 sm:p-9">
+            
+            <!-- Worksheet Header (Visible on Screen & Print) -->
+            <div class="border-b-2 border-slate-900 pb-4 mb-5">
+                <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                            數學科鞏固工作紙：化簡代數分式
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+                            課題：基礎代數 — 代數分式的約簡（Simplifying Algebraic Fractions）
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <span id="printVersionTag" class="text-xs font-semibold px-2.5 py-1 rounded border border-slate-400 text-slate-700 bg-white">
+                            學生練習版
+                        </span>
+                        <span id="sheetCodeTag" class="text-xs font-mono px-2 py-1 rounded bg-slate-100 text-slate-600 border border-slate-300">
+                            #DSE-0000
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Student Info Fill-in Bar -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2.5 mt-4 pt-3 border-t border-slate-300 text-sm text-slate-800">
+                    <div class="flex items-end">
+                        <span class="font-medium shrink-0">姓名：</span>
+                        <span class="flex-1 border-b border-slate-500 h-5 ml-1"></span>
+                    </div>
+                    <div class="flex items-end">
+                        <span class="font-medium shrink-0">班別：</span>
+                        <span class="flex-1 border-b border-slate-500 h-5 ml-1"></span>
+                    </div>
+                    <div class="flex items-end">
+                        <span class="font-medium shrink-0">學號：</span>
+                        <span class="flex-1 border-b border-slate-500 h-5 ml-1"></span>
+                    </div>
+                    <div class="flex items-end">
+                        <span class="font-medium shrink-0">日期：</span>
+                        <span class="flex-1 border-b border-slate-500 h-5 ml-1"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Instructions -->
+            <div class="mb-4 text-xs sm:text-sm text-slate-700 flex items-center justify-between bg-slate-100/80 px-3.5 py-2 rounded-lg border border-slate-200">
+                <span><strong>作答指引：</strong>化簡下列各代數分式至最簡形式，並在方格內清楚列出因式分解或約簡步驟。</span>
+                <span class="hidden sm:inline text-slate-500 font-medium">（共 2 大題，8 小題）</span>
+            </div>
+
+            <!-- Question 1 Box (Matches Original Image Structure) -->
+            <section class="q-card-box bg-white rounded-xl border-2 border-slate-800 overflow-hidden mb-6 shadow-sm">
+                <div class="q-card-header bg-slate-100 border-b-2 border-slate-800 px-4 py-2.5 flex items-center gap-3">
+                    <span class="font-bold text-base sm:text-lg text-slate-900">1.</span>
+                    <h3 class="font-bold text-base sm:text-lg text-slate-900">化簡下列各代數分式。</h3>
+                    <span class="no-print ml-auto text-xs text-slate-500 hidden sm:inline">（單項式指數及已分解括號約簡）</span>
+                </div>
+
+                <!-- 2x2 Grid for 1a, 1b, 1c, 1d -->
+                <div id="q1-grid" class="grid grid-cols-1 md:grid-cols-2">
+                    <!-- Sub-questions injected by JS -->
+                </div>
+            </section>
+
+            <!-- Question 2 Box (Matches Original Image Structure) -->
+            <section class="q-card-box bg-white rounded-xl border-2 border-slate-800 overflow-hidden shadow-sm">
+                <div class="q-card-header bg-slate-100 border-b-2 border-slate-800 px-4 py-2.5 flex items-center gap-3">
+                    <span class="font-bold text-base sm:text-lg text-slate-900">2.</span>
+                    <h3 class="font-bold text-base sm:text-lg text-slate-900">化簡下列各代數分式。</h3>
+                    <span class="no-print ml-auto text-xs text-slate-500 hidden sm:inline">（提取公因式及處理正負號相反括號）</span>
+                </div>
+
+                <!-- 2x2 Grid for 2a, 2b, 2c, 2d -->
+                <div id="q2-grid" class="grid grid-cols-1 md:grid-cols-2">
+                    <!-- Sub-questions injected by JS -->
+                </div>
+            </section>
+
+            <!-- Print-only Footer -->
+            <footer class="print-footer hidden justify-between items-center mt-4 pt-2 border-t border-slate-300 text-xs text-slate-500">
+                <span>HKDSE 基礎代數：化簡代數分式鞏固練習</span>
+                <span id="footerSheetCode">練習編號：#DSE-0000</span>
+            </footer>
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        // 1. 數學工具函式 (GCD、隨機數、變數選取)
+        // ==========================================
+        function gcd(a, b) {
+            a = Math.abs(a);
+            b = Math.abs(b);
+            while (b !== 0) {
+                let t = b;
+                b = a % b;
+                a = t;
+            }
+            return a;
+        }
+
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function pickRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function pickDistinctVars(count) {
+            const pools = [
+                ['m', 'n'],
+                ['x', 'y'],
+                ['u', 'v'],
+                ['r', 's'],
+                ['a', 'b'],
+                ['p', 'q'],
+                ['h', 'k']
+            ];
+            const chosenPool = pickRandom(pools);
+            if (Math.random() < 0.5) {
+                return [chosenPool[0], chosenPool[1]].slice(0, count);
+            } else {
+                return [chosenPool[1], chosenPool[0]].slice(0, count);
+            }
+        }
+
+        // Helper to format coefficient + variable nicely (e.g., 1x -> x, -1x -> -x)
+        function formatTerm(coeff, varPart = '') {
+            if (coeff === 1 && varPart !== '') return varPart;
+            if (coeff === -1 && varPart !== '') return '-' + varPart;
+            return `${coeff}${varPart}`;
+        }
+
+        // Helper to format variable with power (e.g., x^1 -> x, x^3 -> x^{3})
+        function formatPow(v, p) {
+            if (p === 0) return '';
+            if (p === 1) return v;
+            return `${v}^{${p}}`;
+        }
+
+        // Helper to build final simplified fraction LaTeX safely
+        function buildSimplifiedFraction(numCoeff, numVars, denCoeff, denVars, isNegative = false) {
+            const signPrefix = isNegative ? '-' : '';
+            if (denCoeff === 1 && denVars === '') {
+                const top = formatTerm(numCoeff, numVars);
+                return `${signPrefix}${top}`;
+            }
+            const top = numVars === '' ? `${numCoeff}` : formatTerm(numCoeff, numVars);
+            const bottom = denVars === '' ? `${denCoeff}` : formatTerm(denCoeff, denVars);
+            return `${signPrefix}\\frac{${top}}{${bottom}}`;
+        }
+
+        // ==========================================
+        // 2. 8 大題型精密生成器 (完全對應圖片結構)
+        // ==========================================
+
+        // 1a) 單項式單變數指數約簡（分母次方較大，如 3m^3 / 9m^6 = 1 / 3m^3）
+        function gen1a() {
+            const [v] = pickDistinctVars(1);
+            const commonFactor = randInt(2, 6);
+            let a = randInt(1, 5);
+            let b = randInt(1, 7);
+            while (a === b && a === 1) { b = randInt(2, 6); }
+            const g = gcd(a, b);
+            a /= g;
+            b /= g;
+
+            const numCoeff = a * commonFactor;
+            const denCoeff = b * commonFactor;
+            const p1 = randInt(1, 4);
+            const diff = randInt(2, 5);
+            const p2 = p1 + diff;
+
+            const problem = `\\frac{${formatTerm(numCoeff, formatPow(v, p1))}}{${formatTerm(denCoeff, formatPow(v, p2))}}`;
+            const hint = `先將分子與分母的數字係數同除以最大公因數 ${commonFactor}，再利用指數定律 $\\frac{${v}^m}{${v}^n} = \\frac{1}{${v}^{n-m}}$ 約簡變數。`;
+            const step1 = `\\frac{${numCoeff} \\div ${commonFactor}}{(${denCoeff} \\div ${commonFactor})${formatPow(v, `${p2}-${p1}`)}}`;
+            const answer = buildSimplifiedFraction(a, '', b, formatPow(v, diff));
+
+            return { id: '1a', label: 'a)', problem, hint, step1, step2: null, answer };
+        }
+
+        // 1b) 單項式單變數指數約簡（分子次方較大，如 5y^6 / 7y^4 = 5y^2 / 7）
+        function gen1b() {
+            const [v] = pickDistinctVars(1);
+            const useCommonFactor = Math.random() < 0.6;
+            const commonFactor = useCommonFactor ? randInt(2, 5) : 1;
+            let a = randInt(2, 8);
+            let b = randInt(2, 9);
+            while (a === b) { b = randInt(2, 9); }
+            const g = gcd(a, b);
+            a /= g;
+            b /= g;
+
+            const numCoeff = a * commonFactor;
+            const denCoeff = b * commonFactor;
+            const p2 = randInt(2, 5);
+            const diff = randInt(1, 4);
+            const p1 = p2 + diff;
+
+            const problem = `\\frac{${formatTerm(numCoeff, formatPow(v, p1))}}{${formatTerm(denCoeff, formatPow(v, p2))}}`;
+            const hint = useCommonFactor
+                ? `數字係數約去公因數 ${commonFactor}，分子指數較大，利用 $\\frac{${v}^{${p1}}}{${v}^{${p2}}} = ${v}^{${p1}-${p2}}$ 化簡。`
+                : `分子指數較大，保留係數並利用指數定律 $\\frac{${v}^{${p1}}}{${v}^{${p2}}} = ${v}^{${p1}-${p2}}$ 約簡。`;
+            const step1 = `\\frac{${formatTerm(a, `${v}^{${p1}-${p2}}`)}}{${b}}`;
+            const answer = buildSimplifiedFraction(a, formatPow(v, diff), b, '');
+
+            return { id: '1b', label: 'b)', problem, hint, step1, step2: null, answer };
+        }
+
+        // 1c) 單項式雙變數指數約簡（如 12uv / 18u^2v^5 = 2 / 3uv^4）
+        function gen1c() {
+            const [u, v] = pickDistinctVars(2);
+            const commonFactor = randInt(2, 6);
+            let a = randInt(1, 5);
+            let b = randInt(2, 7);
+            while (a === b) { b = randInt(2, 7); }
+            const g = gcd(a, b);
+            a /= g;
+            b /= g;
+
+            const numCoeff = a * commonFactor;
+            const denCoeff = b * commonFactor;
+
+            // Randomize whether u or v is larger on top or bottom, ensuring at least one goes to denominator
+            const uNumP = randInt(1, 3);
+            const uDiff = randInt(1, 3);
+            const uDenP = uNumP + uDiff;
+
+            const vNumP = randInt(1, 4);
+            const vDiff = randInt(1, 4);
+            const vDenP = vNumP + vDiff;
+
+            const problem = `\\frac{${formatTerm(numCoeff, formatPow(u, uNumP) + formatPow(v, vNumP))}}{${formatTerm(denCoeff, formatPow(u, uDenP) + formatPow(v, vDenP))}}`;
+            const hint = `分別處理數字係數（除以 ${commonFactor}）、變數 $${u}$ 的次方及變數 $${v}$ 的次方。`;
+            const step1 = `\\frac{${a}}{${b} \\cdot ${u}^{${uDenP}-${uNumP}} \\cdot ${v}^{${vDenP}-${vNumP}}}`;
+            const answer = buildSimplifiedFraction(a, '', b, formatPow(u, uDiff) + formatPow(v, vDiff));
+
+            return { id: '1c', label: 'c)', problem, hint, step1, step2: null, answer };
+        }
+
+        // 1d) 已分解括號及變數約簡（如 x^4(x-2) / 2x(x-2) = x^3 / 2）
+        function gen1d() {
+            const [x] = pickDistinctVars(1);
+            const c = randInt(2, 7);
+            const sign = Math.random() < 0.5 ? '-' : '+';
+            const useCommonFactor = Math.random() < 0.5;
+            const commonFactor = useCommonFactor ? randInt(2, 4) : 1;
+            let a = useCommonFactor ? randInt(1, 3) : 1;
+            let b = randInt(2, 5);
+            const g = gcd(a, b);
+            a /= g;
+            b /= g;
+
+            const numCoeff = a * commonFactor;
+            const denCoeff = b * commonFactor;
+            const p2 = randInt(1, 3);
+            const diff = randInt(2, 4);
+            const p1 = p2 + diff;
+
+            const bracket = `(${x} ${sign} ${c})`;
+            const problem = `\\frac{${formatTerm(numCoeff, formatPow(x, p1))}${bracket}}{${formatTerm(denCoeff, formatPow(x, p2))}${bracket}}`;
+            const hint = `分子與分母均有相同的括號公因式 $${bracket}$，可直接整組約去，再約簡 $${x}$ 的次方。`;
+            const step1 = `\\text{約去公因式 } ${bracket} \\text{ 及 } ${formatPow(x, p2)}：\\quad \\frac{${formatTerm(a, `${x}^{${p1}-${p2}}`)}}{${b}}`;
+            const answer = buildSimplifiedFraction(a, formatPow(x, diff), b, '');
+
+            return { id: '1d', label: 'd)', problem, hint, step1, step2: null, answer };
+        }
+
+        // 2a) 單項分子與二項式分母抽取公因式（如 6m / (3m+6) = 2m / (m+2)）
+        function gen2a() {
+            const [m] = pickDistinctVars(1);
+            const k = randInt(2, 6); // common factor
+            let a = randInt(2, 5);
+            let b = 1;
+            let c = randInt(2, 6);
+            while (gcd(a, k) !== 1 && a === k) { a = randInt(2, 5); }
+            // Ensure k is the exact GCD of numerator coeff (a*k) and denominator coeffs (k, c*k)
+            while (gcd(a, gcd(1, c)) !== 1) { a = randInt(2, 5); }
+
+            const numCoeff = a * k;
+            const denCoeff1 = k;
+            const denCoeff2 = c * k;
+            const sign = Math.random() < 0.5 ? '+' : '-';
+
+            const problem = `\\frac{${numCoeff}${m}}{${denCoeff1}${m} ${sign} ${denCoeff2}}`;
+            const hint = `先從分母 $${denCoeff1}${m} ${sign} ${denCoeff2}$ 提取公因式 $${k}$，再與分子的係數 $${numCoeff}$ 約簡。`;
+            const step1 = `\\frac{${numCoeff}${m}}{${k}(${m} ${sign} ${c})}`;
+            const answer = `\\frac{${a}${m}}{${m} ${sign} ${c}}`;
+
+            return { id: '2a', label: 'a)', problem, hint, step1, step2: null, answer };
+        }
+
+        // 2b) 分子與分母各有公因式且含共同/反向括號（如 (10s-5) / (7r-14rs) = -5 / 7r）
+        function gen2b() {
+            const [s, r] = pickDistinctVars(2);
+            const k1 = randInt(2, 6); // num factor
+            let k2 = randInt(2, 8);   // den factor
+            while (gcd(k1, k2) !== 1) { k2 = randInt(2, 9); }
+
+            const a = randInt(2, 5);
+            const b = randInt(1, 4);
+            while (gcd(a, b) !== 1) { b === 1 ? 1 : b; break; }
+            const cleanB = gcd(a, b) === 1 ? b : 1;
+
+            // Decide if reversed sign bracket (like original 2b: (10s-5)/(7r-14rs)) or same order
+            const isReversed = Math.random() < 0.7; // 70% reversed like original image 2b!
+            const numT1 = k1 * a;
+            const numT2 = k1 * cleanB;
+            const denT1 = k2 * cleanB;
+            const denT2 = k2 * a;
+
+            if (isReversed) {
+                const problem = `\\frac{${numT1}${s} - ${numT2}}{${denT1}${r} - ${denT2}${r}${s}}`;
+                const hint = `分子提取 $${k1}$，分母提取 $${k2}${r}$；留意 $(${a}${s} - ${cleanB})$ 與 $(${cleanB} - ${a}${s})$ 正負號相反！`;
+                const step1 = `\\frac{${k1}(${a}${s} - ${cleanB})}{${k2}${r}(${cleanB} - ${a}${s})}`;
+                const step2 = `\\frac{${k1}(${a}${s} - ${cleanB})}{-${k2}${r}(${a}${s} - ${cleanB})}`;
+                const answer = `-\\frac{${k1}}{${k2}${r}}`;
+                return { id: '2b', label: 'b)', problem, hint, step1, step2, answer };
+            } else {
+                const sign = Math.random() < 0.5 ? '+' : '-';
+                const problem = `\\frac{${numT1}${s} ${sign} ${numT2}}{${denT2}${r}${s} ${sign} ${denT1}${r}}`;
+                const hint = `分子提取公因式 $${k1}$，分母提取公因式 $${k2}${r}$，即可發現相同的括號因式 $(${a}${s} ${sign} ${cleanB})$。`;
+                const step1 = `\\frac{${k1}(${a}${s} ${sign} ${cleanB})}{${k2}${r}(${a}${s} ${sign} ${cleanB})}`;
+                const answer = `\\frac{${k1}}{${k2}${r}}`;
+                return { id: '2b', label: 'b)', problem, hint, step1, step2: null, answer };
+            }
+        }
+
+        // 2c) 分子與分母皆為二項式提取公因式（如 (3y^2 - 15y) / (7xy - 35x) = 3y / 7x）
+        function gen2c() {
+            const [x, y] = pickDistinctVars(2);
+            let k1 = randInt(2, 7);
+            let k2 = randInt(2, 9);
+            while (gcd(k1, k2) !== 1) { k2 = randInt(2, 9); }
+
+            const c = randInt(2, 6);
+            const sign = Math.random() < 0.5 ? '-' : '+';
+
+            const numT2 = k1 * c;
+            const denT2 = k2 * c;
+
+            const problem = `\\frac{${k1}${y}^{2} ${sign} ${numT2}${y}}{${k2}${x}${y} ${sign} ${denT2}${x}}`;
+            const hint = `分子提取公因式 $${k1}${y}$，分母提取公因式 $${k2}${x}$，然後約去共同括號 $(${y} ${sign} ${c})$。`;
+            const step1 = `\\frac{${k1}${y}(${y} ${sign} ${c})}{${k2}${x}(${y} ${sign} ${c})}`;
+            const answer = `\\frac{${k1}${y}}{${k2}${x}}`;
+
+            return { id: '2c', label: 'c)', problem, hint, step1, step2: null, answer };
+        }
+
+        // 2d) 提取公因式後出現相反順序括號 a-b 與 b-a 需提負號約簡（如 (2mn - 6m) / (3 - n) = -2m）
+        function gen2d() {
+            const [m, n] = pickDistinctVars(2);
+            const k = randInt(2, 7);
+            const c = randInt(2, 8);
+            const numT2 = k * c;
+
+            // Variant A: (k*m*n - k*c*m) / (c - n) = -k*m  (Exact match to original 2d)
+            // Variant B: (c - n) / (k*m*n - k*c*m) = -1 / (k*m)
+            const variantA = Math.random() < 0.75;
+
+            if (variantA) {
+                const problem = `\\frac{${k}${m}${n} - ${numT2}${m}}{${c} - ${n}}`;
+                const hint = `分子提取公因式 $${k}${m}$ 得 $(${n} - ${c})$，分母可寫成 $-(${n} - ${c})$，約簡時緊記保留負號！`;
+                const step1 = `\\frac{${k}${m}(${n} - ${c})}{-(${n} - ${c})}`;
+                const answer = `-${k}${m}`;
+                return { id: '2d', label: 'd)', problem, hint, step1, step2: null, answer };
+            } else {
+                const problem = `\\frac{${c} - ${n}}{${k}${m}${n} - ${numT2}${m}}`;
+                const hint = `分母提取公因式 $${k}${m}$ 得 $(${n} - ${c})$，而分子 ${c} - ${n} = -(${n} - ${c})$。`;
+                const step1 = `\\frac{-(${n} - ${c})}{${k}${m}(${n} - ${c})}`;
+                const answer = `-\\frac{1}{${k}${m}}`;
+                return { id: '2d', label: 'd)', problem, hint, step1, step2: null, answer };
+            }
+        }
+
+        // ==========================================
+        // 3. 狀態管理與介面渲染
+        // ==========================================
+        let currentData = { q1: [], q2: [], seed: '' };
+        let showAllSolutions = false;
+        let selfTestMode = false;
+        let individualStates = {}; // { '1a': { hint: false, answer: false }, ... }
+
+        function renderMath(tex, displayMode = false) {
+            try {
+                return katex.renderToString(tex, {
+                    throwOnError: false,
+                    displayMode: displayMode
+                });
+            } catch (e) {
+                return tex;
+            }
+        }
+
+        // Helper to render text that may contain inline $...$ LaTeX
+        function renderMixedText(text) {
+            return text.replace(/\$([^$]+)\$/g, (_, mathTex) => {
+                return renderMath(mathTex, false);
+            });
+        }
+
+        function createSubQuestionHTML(item, index, totalInGroup) {
+            const state = individualStates[item.id] || { hint: false, answer: false };
+            const isAnswerVisible = showAllSolutions || state.answer;
+            const isHintVisible = !isAnswerVisible && selfTestMode && state.hint;
+
+            // Responsive borders for 2x2 grid
+            const isLeftCol = index % 2 === 0;
+            const isTopRow = index < 2;
+            let borderClasses = 'border-slate-300 ';
+            if (isLeftCol) borderClasses += 'md:border-r ';
+            if (isTopRow) borderClasses += 'border-b ';
+            else borderClasses += 'border-b md:border-b-0 ';
+            if (index === totalInGroup - 1) borderClasses = borderClasses.replace('border-b ', '');
+
+            return `
+                <div class="sub-q-cell p-4 sm:p-5 flex flex-col justify-between ${borderClasses} transition-colors hover:bg-slate-50/50">
+                    <!-- Top Row: Label + Problem Expression + Self-Test Action Buttons -->
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-slate-800 text-base select-none">${item.label}</span>
+                            <div class="text-slate-900 py-1">
+                                ${renderMath(item.problem, false)}
+                            </div>
+                        </div>
+
+                        <!-- Interactive Self-Test Controls (Hidden when printing or when all solutions shown) -->
+                        ${(selfTestMode && !showAllSolutions) ? `
+                            <div class="no-print flex items-center gap-1.5 shrink-0">
+                                <button type="button" onclick="toggleSingleHint('${item.id}')"
+                                    class="px-2 py-1 rounded text-xs font-medium border transition cursor-pointer ${state.hint ? 'bg-amber-100 border-amber-400 text-amber-900' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'}">
+                                    💡 提示
+                                </button>
+                                <button type="button" onclick="toggleSingleAnswer('${item.id}')"
+                                    class="px-2 py-1 rounded text-xs font-medium border transition cursor-pointer ${state.answer ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'}">
+                                    ${state.answer ? '隱藏答案' : '核對答案'}
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Dynamic Area: Working Space OR Hint OR Detailed Step-by-Step Solution -->
+                    <div class="mt-3">
+                        ${isAnswerVisible ? `
+                            <div class="solution-box fade-in rounded-lg bg-indigo-50/75 border border-indigo-200 p-3 text-sm">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-800">解題步驟與答案</span>
+                                    ${(!showAllSolutions && selfTestMode) ? `
+                                        <button type="button" onclick="toggleSingleAnswer('${item.id}')" class="no-print text-xs text-indigo-600 hover:underline cursor-pointer">收起</button>
+                                    ` : ''}
+                                </div>
+                                <div class="step-katex space-y-1.5 text-slate-800 pl-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-slate-500 font-mono text-xs">=</span>
+                                        <span>${renderMath(item.step1, false)}</span>
+                                    </div>
+                                    ${item.step2 ? `
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-slate-500 font-mono text-xs">=</span>
+                                            <span>${renderMath(item.step2, false)}</span>
+                                        </div>
+                                    ` : ''}
+                                    <div class="flex items-center gap-2 pt-1 border-t border-indigo-200/80">
+                                        <span class="text-indigo-700 font-bold text-xs">=</span>
+                                        <span class="font-bold text-indigo-950 bg-white px-2 py-0.5 rounded border border-indigo-200 shadow-2xs">
+                                            ${renderMath(item.answer, false)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : isHintVisible ? `
+                            <div class="fade-in rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs sm:text-sm text-amber-950">
+                                <div class="font-semibold text-amber-800 mb-0.5">💡 解題提示：</div>
+                                <p class="leading-relaxed">${renderMixedText(item.hint)}</p>
+                            </div>
+                        ` : `
+                            <!-- Clean Student Working Area -->
+                            <div class="work-area-grid min-h-[76px] rounded-lg border border-dashed border-slate-200/90 flex items-end justify-end p-2">
+                                <span class="no-print text-[11px] text-slate-300 select-none">作答區</span>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWorksheet() {
+            const q1Container = document.getElementById('q1-grid');
+            const q2Container = document.getElementById('q2-grid');
+
+            q1Container.innerHTML = currentData.q1
+                .map((item, idx) => createSubQuestionHTML(item, idx, currentData.q1.length))
+                .join('');
+
+            q2Container.innerHTML = currentData.q2
+                .map((item, idx) => createSubQuestionHTML(item, idx, currentData.q2.length))
+                .join('');
+
+            updateToolbarUI();
+        }
+
+        function updateToolbarUI() {
+            const btnSol = document.getElementById('btnToggleSolutions');
+            const toggleSolText = document.getElementById('toggleSolText');
+            const eyeIcon = document.getElementById('eyeIcon');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const printVersionTag = document.getElementById('printVersionTag');
+
+            if (showAllSolutions) {
+                btnSol.classList.remove('bg-indigoBrand-700', 'hover:bg-indigoBrand-600');
+                btnSol.classList.add('bg-amber-600', 'hover:bg-amber-500');
+                eyeIcon.textContent = '🙈';
+                toggleSolText.textContent = '隱藏詳細題解';
+                modeIndicator.innerHTML = '● 目前模式：<strong class="text-amber-300">教師核對版（顯示完整步驟與答案）</strong>';
+                printVersionTag.textContent = '教師答案版';
+                printVersionTag.className = 'text-xs font-semibold px-2.5 py-1 rounded border border-amber-600 text-amber-900 bg-amber-50';
+            } else {
+                btnSol.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+                btnSol.classList.add('bg-indigoBrand-700', 'hover:bg-indigoBrand-600');
+                eyeIcon.textContent = '👁️';
+                toggleSolText.textContent = '顯示詳細題解';
+                printVersionTag.textContent = '學生練習版';
+                printVersionTag.className = 'text-xs font-semibold px-2.5 py-1 rounded border border-slate-400 text-slate-700 bg-white';
+
+                if (selfTestMode) {
+                    modeIndicator.innerHTML = '● 目前模式：<strong class="text-sky-300">互動自測模式（可點擊單題提示或逐題核對）</strong>';
+                } else {
+                    modeIndicator.innerHTML = '● 目前模式：<strong class="text-emerald-300">學生練習卷（隱藏答案，適合列印測驗）</strong>';
+                }
+            }
+
+            const btnSelf = document.getElementById('btnToggleSelfTest');
+            const selfTestText = document.getElementById('selfTestText');
+            if (selfTestMode) {
+                btnSelf.classList.remove('bg-slate-800', 'hover:bg-slate-700');
+                btnSelf.classList.add('bg-sky-700', 'hover:bg-sky-600', 'border-sky-400');
+                selfTestText.textContent = '關閉互動自測';
+            } else {
+                btnSelf.classList.remove('bg-sky-700', 'hover:bg-sky-600', 'border-sky-400');
+                btnSelf.classList.add('bg-slate-800', 'hover:bg-slate-700');
+                selfTestText.textContent = '開啟互動自測';
+            }
+        }
+
+        // ==========================================
+        // 4. 互動控制函式
+        // ==========================================
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.textContent = message;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 2400);
+        }
+
+        function generateNewWorksheet(isInitial = false) {
+            const seedNum = Math.floor(1000 + Math.random() * 9000);
+            const seedStr = `#DSE-${seedNum}`;
+
+            currentData = {
+                seed: seedStr,
+                q1: [gen1a(), gen1b(), gen1c(), gen1d()],
+                q2: [gen2a(), gen2b(), gen2c(), gen2d()]
+            };
+
+            // Reset individual states
+            individualStates = {};
+            [...currentData.q1, ...currentData.q2].forEach(q => {
+                individualStates[q.id] = { hint: false, answer: false };
+            });
+
+            document.getElementById('seedBadge').textContent = seedStr;
+            document.getElementById('sheetCodeTag').textContent = seedStr;
+            document.getElementById('footerSheetCode').textContent = `練習編號：${seedStr}`;
+
+            renderWorksheet();
+
+            if (!isInitial) {
+                showToast(`已生成全新練習卷 (${seedStr})！`);
+            }
+        }
+
+        function toggleAllSolutions() {
+            showAllSolutions = !showAllSolutions;
+            renderWorksheet();
+        }
+
+        function toggleSelfTestMode() {
+            selfTestMode = !selfTestMode;
+            if (selfTestMode && showAllSolutions) {
+                showAllSolutions = false;
+                showToast('已切換至互動自測模式，可逐題查看提示或核對答案');
+            }
+            renderWorksheet();
+        }
+
+        function toggleSingleHint(id) {
+            if (!individualStates[id]) individualStates[id] = { hint: false, answer: false };
+            individualStates[id].hint = !individualStates[id].hint;
+            renderWorksheet();
+        }
+
+        function toggleSingleAnswer(id) {
+            if (!individualStates[id]) individualStates[id] = { hint: false, answer: false };
+            individualStates[id].answer = !individualStates[id].answer;
+            renderWorksheet();
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            generateNewWorksheet(true);
+        });
+    </script>
+</body>
+</html>
